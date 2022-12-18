@@ -1,92 +1,89 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import click
+
 import json
+import click
 
 
-def get_poezd(poezd_load, name, no, time, file_name):
-    poezd_load.append({"name": name, "no": no, "time": time})
-    with open(file_name, "w", encoding="utf-8") as fout:
-        json.dump(poezd_load, fout, ensure_ascii=False, indent=4)
-    return load_poezd(file_name)
+@click.group()
+def cli():
+    pass
 
 
-def list(poezd_load):
-    if poezd_load:
-        line = "+-{}-+-{}-+-{}-+".format(
-            "-" * 10,
-            "-" * 20,
-            "-" * 8,
-        )
-        print(line)
-        print("| {:^10} | {:^20} | {:^8} |".format(" No ", "Название", "Время"))
-        print(line)
+@cli.command("add")
+@click.argument("filename")
+@click.option("-n", "--name")
+@click.option("-no", "--nomer", type=int)
+@click.option("-t", "--time")
+def add(filename, name, nomer, time):
+    """
+    Добавить данные о поезде
+    """
+    # Запросить данные о поезде.
+    poezd = load_poezd(filename)
+    poezd.append(
+        {
+            "nomer": nomer,
+            "name": name,
+            "time": time,
+        }
+    )
+    with open(filename, "w", encoding="utf-8") as fout:
+        json.dump(poezd, fout, ensure_ascii=False, indent=4)
+    click.secho("Поезд добавлен")
 
-        for idx, po in enumerate(poezd_load, 1):
-            print(
-                "| {:>10} | {:<20} | {"
-                "} |".format(po.get("no", ""), po.get("name", ""), po.get("time", ""))
-            )
-        print(line)
+
+@cli.command("dot")
+@click.option("--n", default=1)
+def dots(n):
+    click.echo("." * n)
 
 
-def select_poezd(poezd_load, nom):
+@cli.command("display")
+@click.argument("filename")
+@click.option("--select", "-s", type=int)
+def display(filename, select):
+    print(select)
+    # Заголовок таблицы.
+    poezd = load_poezd(filename)
+
+    if select:
+        print(select)
+        poezd = selected(poezd, select)
+
     line = "+-{}-+-{}-+-{}-+".format(
         "-" * 10,
+        "-" * 30,
         "-" * 20,
-        "-" * 8,
     )
     print(line)
-    print("| {:^10} | {:^20} | {:^8} |".format(" No ", "Название", "Время"))
+    print("| {:^10} | {:^30} | {:^20} |".format("№", "Пункт назначения", "Время"))
     print(line)
-    count = 0
 
-    for idx, po in enumerate(poezd_load, 1):
-        if po.get("no", 0) == nom:
-            count += 1
-            print(
-                "| {:>10} | {:<20} | {"
-                "} |".format(po.get("no", ""), po.get("name", ""), po.get("time", ""))
+    # Вывести данные о всех поездах.
+    for idx, po in enumerate(poezd, 1):
+        print(
+            "| {:>10} | {:<30} | {:<20} | ".format(
+                po.get("nomer", ""), po.get("name", ""), po.get("time", 0)
             )
+        )
     print(line)
-    if count == 0:
-        print("Поездов с таким номером нет.")
 
 
-def load_poezd(file_name):
-    with open(file_name, "r", encoding="utf-8") as fin:
-        loadfile = json.load(fin)
-    return loadfile
+def selected(list, nom):
+    # Проверить сведения поездов из списка.
+    poezd = []
+    for po in list:
+        if po["nomer"] == nom:
+            poezd.append(po)
+    return poezd
 
 
-def help():
-    print("Список команд:\n")
-    print("add - добавить поезд;")
-    print("list - вывести список поездов;")
-    print("select <номер> - запросить поезд по номеру;")
-    print("load - загрузить данные из файла;")
-    print("save - сохранить данные в файл;")
-    print("help - отобразить справку;")
-    print("exit - завершить работу с программой.")
-
-
-@click.command()
-@click.option("-c", "--command")
-@click.argument("file_name")
-@click.option("-n", "--name")
-@click.option("-o", "--no")
-@click.option("-t", "time")
-def main(command, name, no, time, file_name):
-    poezd_load = load_poezd(file_name)
-    if command == "add":
-        get_poezd(poezd_load, name, no, time, file_name)
-        click.secho("Данные добавлены")
-    elif command == "display":
-        list(poezd_load)
-    elif command == "select":
-        select_poezd(poezd_load)
+def load_poezd(filename):
+    with open(filename, "r", encoding="utf-8") as fin:
+        return json.load(fin)
 
 
 if __name__ == "__main__":
-    main()
+    cli()
