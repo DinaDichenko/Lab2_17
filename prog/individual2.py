@@ -34,12 +34,6 @@ def add(filename, name, nomer, time):
     click.secho("Поезд добавлен")
 
 
-@cli.command("dot")
-@click.option("--n", default=1)
-def dots(n):
-    click.echo("." * n)
-
-
 @cli.command("display")
 @click.argument("filename")
 @click.option("--select", "-s", type=int)
@@ -49,7 +43,6 @@ def display(filename, select):
     poezd = load_poezd(filename)
 
     if select:
-        print(select)
         poezd = selected(poezd, select)
 
     line = "+-{}-+-{}-+-{}-+".format(
